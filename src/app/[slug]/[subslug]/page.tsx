@@ -1,0 +1,125 @@
+import { supabase } from '@/lib/supabase'
+import { notFound } from 'next/navigation'
+import { ArrowLeft } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { Card } from '@/components/ui/card'
+import Link from 'next/link'
+import Image from 'next/image'
+import ContactBlockDisplay from '@/components/blocks/display/ContactBlockDisplay'
+import LocationBlockDisplay from '@/components/blocks/display/LocationBlockDisplay'
+import BusinessHoursBlockDisplay from '@/components/blocks/display/BusinessHoursBlockDisplay'
+import HeadingTextBlockDisplay from '@/components/blocks/display/HeadingTextBlockDisplay'
+import HeadingLinkBlockDisplay from '@/components/blocks/display/HeadingLinkBlockDisplay'
+import MessagingBlockDisplay from '@/components/blocks/display/MessagingBlockDisplay'
+import PriceListBlockDisplay from '@/components/blocks/display/PriceListBlockDisplay'
+import MenuBlockDisplay from '@/components/blocks/display/MenuBlockDisplay'
+import PhotoGalleryBlockDisplay from '@/components/blocks/display/PhotoGalleryBlockDisplay'
+import SocialMediaBlockDisplay from '@/components/blocks/display/SocialMediaBlockDisplay'
+
+export const dynamic = 'force-dynamic'
+
+export default async function SubPage({ params }: { params: { slug: string; subslug: string } }) {
+  const { data: business } = await supabase
+    .from('businesses')
+    .select('*')
+    .eq('slug', params.slug)
+    .single()
+
+  if (!business) {
+    notFound()
+  }
+
+  const { data: page } = await supabase
+    .from('pages')
+    .select('*')
+    .eq('business_id', business.id)
+    .eq('sub_slug', params.subslug)
+    .single()
+
+  if (!page) {
+    notFound()
+  }
+
+  const { data: blocks } = await supabase
+    .from('page_blocks')
+    .select('*')
+    .eq('page_id', page.id)
+    .order('display_order', { ascending: true })
+
+  const renderBlock = (block: any) => {
+    switch (block.block_type) {
+      case 'contact':
+        return <ContactBlockDisplay key={block.id} data={block.data} />
+      case 'location':
+        return <LocationBlockDisplay key={block.id} data={block.data} />
+      case 'business_hours':
+        return <BusinessHoursBlockDisplay key={block.id} data={block.data} />
+      case 'heading_text':
+        return <HeadingTextBlockDisplay key={block.id} data={block.data} />
+      case 'heading_link':
+        return <HeadingLinkBlockDisplay key={block.id} data={block.data} />
+      case 'messaging':
+        return <MessagingBlockDisplay key={block.id} data={block.data} />
+      case 'price_list':
+        return <PriceListBlockDisplay key={block.id} data={block.data} />
+      case 'menu':
+        return <MenuBlockDisplay key={block.id} data={block.data} />
+      case 'photo_gallery':
+        return <PhotoGalleryBlockDisplay key={block.id} data={block.data} />
+      case 'social_media':
+        return <SocialMediaBlockDisplay key={block.id} data={block.data} />
+      default:
+        return null
+    }
+  }
+
+  return (
+    <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4">
+      <div className="max-w-lg mx-auto py-8 sm:py-12 space-y-6">
+        {/* Back Button */}
+        <Link href={`/${business.slug}`}>
+          <Button variant="ghost" className="gap-2 -ml-2">
+            <ArrowLeft className="h-4 w-4" />
+            Back to {business.name}
+          </Button>
+        </Link>
+
+        {/* Logo and Page Info Card */}
+        <Card className="p-0 overflow-hidden">
+          {business.logo_url && (
+            <div className="w-full h-auto m-0 p-0">
+              <div className="relative w-full h-64">
+                <Image
+                  src={business.logo_url}
+                  alt={business.name}
+                  fill
+                  className="object-contain"
+                  priority
+                />
+              </div>
+            </div>
+          )}
+          
+          <div className="px-6 py-4 text-center">
+            <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 tracking-tight">
+              {page.title}
+            </h1>
+          </div>
+        </Card>
+
+        {/* Dynamic Blocks */}
+        {blocks && blocks.length > 0 && (
+          <div className="space-y-4">
+            {blocks.map(block => renderBlock(block))}
+          </div>
+        )}
+
+        {/* Footer */}
+        <div className="text-center text-sm text-gray-500 space-y-1">
+          <p className="text-base font-semibold text-gray-700">{business.name}</p>
+          <p>Powered by TapKrup</p>
+        </div>
+      </div>
+    </main>
+  )
+}
