@@ -78,7 +78,7 @@ export default async function SubPage({ params }: { params: { slug: string; subs
       <div className="max-w-lg mx-auto py-8 sm:py-12 space-y-6">
         {/* Back Button */}
         <Link href={`/${business.slug}`}>
-          <Button variant="ghost" className="gap-2 -ml-2">
+          <Button variant="ghost" className="gap-2 -ml-2 text-[var(--tapkrup-navy)] hover:bg-[var(--tapkrup-navy)]/10">
             <ArrowLeft className="h-4 w-4" />
             Back to {business.name}
           </Button>

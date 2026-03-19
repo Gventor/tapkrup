@@ -24,7 +24,7 @@ export default function LocationBlockDisplay({ data }: LocationBlockDisplayProps
 
       {data.google_maps && (
         <Link href={data.google_maps} target="_blank" rel="noopener noreferrer" className="block">
-          <Button className="w-full h-14 gap-2 bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700" size="lg">
+          <Button className="w-full h-14 gap-2 bg-[var(--tapkrup-navy)] hover:bg-[var(--tapkrup-navy-dark)] text-white" size="lg">
             <Navigation className="h-5 w-5" />
             Get Directions
           </Button>

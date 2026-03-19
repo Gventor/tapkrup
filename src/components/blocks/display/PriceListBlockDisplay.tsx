@@ -25,7 +25,7 @@ export default function PriceListBlockDisplay({ data }: PriceListBlockDisplayPro
           <div key={index} className="border-b border-gray-200 pb-4 last:border-0 last:pb-0">
             <div className="flex justify-between items-start mb-1">
               <h4 className="font-semibold text-lg">{item.name}</h4>
-              <span className="font-bold text-lg text-blue-600 whitespace-nowrap ml-4">
+              <span className="font-bold text-lg text-[var(--tapkrup-navy)] whitespace-nowrap ml-4">
                 {item.price}
               </span>
             </div>

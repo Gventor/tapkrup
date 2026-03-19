@@ -120,7 +120,7 @@ export default async function BusinessPage({ params }: { params: { slug: string 
             <div className="grid grid-cols-2 gap-3">
               {pages.filter(p => p.id !== mainPage.id).map((page) => (
                 <Link key={page.id} href={`/${business.slug}/${page.sub_slug}`}>
-                  <Button variant="outline" className="w-full h-14">
+                  <Button variant="outline" className="w-full h-14 border-[var(--tapkrup-navy)] text-[var(--tapkrup-navy)] hover:bg-[var(--tapkrup-navy)] hover:text-white">
                     {page.title}
                   </Button>
                 </Link>
