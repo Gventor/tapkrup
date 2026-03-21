@@ -1,7 +1,8 @@
 import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import { Card } from '@/components/ui/card'
-import { Bike, Calendar, User, Phone } from 'lucide-react'
+import Link from 'next/link'
+import { Bike, Calendar, User, Phone, MessageCircle } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -91,6 +92,45 @@ export default async function RentalViewPage({ params }: { params: { code: strin
                 <p className="text-sm text-gray-600">
                   KM: {rental.km_start ?? '–'} → {rental.km_end ?? '–'}
                 </p>
+              </div>
+            )}
+
+            {(rental.agent_phone || rental.agent_line || rental.agent_whatsapp) && (
+              <div className="pt-4">
+                <p className="font-semibold text-gray-900 mb-3">Contact rental shop</p>
+                <div className="flex flex-col gap-2">
+                  {rental.agent_phone && (
+                    <Link
+                      href={`tel:${rental.agent_phone}`}
+                      className="flex items-center gap-3 p-4 rounded-xl bg-[var(--tapkrup-navy)] hover:bg-[var(--tapkrup-navy-dark)] text-white font-semibold transition-colors"
+                    >
+                      <Phone className="h-5 w-5" />
+                      Call
+                    </Link>
+                  )}
+                  {rental.agent_line && (
+                    <Link
+                      href={rental.agent_line.startsWith('http') ? rental.agent_line : `https://line.me/ti/p/~${rental.agent_line}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-4 rounded-xl bg-[var(--tapkrup-green)] hover:bg-[var(--tapkrup-green-dark)] text-white font-semibold transition-colors"
+                    >
+                      <MessageCircle className="h-5 w-5" />
+                      LINE
+                    </Link>
+                  )}
+                  {rental.agent_whatsapp && (
+                    <Link
+                      href={`https://wa.me/${rental.agent_whatsapp.replace(/\D/g, '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-4 rounded-xl bg-[var(--tapkrup-green)] hover:bg-[var(--tapkrup-green-dark)] text-white font-semibold transition-colors"
+                    >
+                      <MessageCircle className="h-5 w-5" />
+                      WhatsApp
+                    </Link>
+                  )}
+                </div>
               </div>
             )}
           </div>
