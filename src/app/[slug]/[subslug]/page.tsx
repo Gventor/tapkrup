@@ -1,9 +1,6 @@
 import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
-import { ArrowLeft } from 'lucide-react'
-import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import Link from 'next/link'
 import Image from 'next/image'
 import ContactBlockDisplay from '@/components/blocks/display/ContactBlockDisplay'
 import LocationBlockDisplay from '@/components/blocks/display/LocationBlockDisplay'
@@ -76,14 +73,6 @@ export default async function SubPage({ params }: { params: { slug: string; subs
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4">
       <div className="max-w-lg mx-auto py-8 sm:py-12 space-y-6">
-        {/* Back Button */}
-        <Link href={`/${business.slug}`}>
-          <Button variant="ghost" className="gap-2 -ml-2 text-[var(--tapkrup-navy)] hover:bg-[var(--tapkrup-navy)]/10">
-            <ArrowLeft className="h-4 w-4" />
-            Back to {business.name}
-          </Button>
-        </Link>
-
         {/* Logo and Page Info Card */}
         <Card className="p-0 overflow-hidden">
           {business.logo_url && (
