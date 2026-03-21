@@ -287,6 +287,8 @@ function RentalForm({
   onSaved: () => void
   onCancel: () => void
 }) {
+  const selectedBike = bikes.find((b) => b.id === (rental?.bike_id || preselectedBikeId))
+  const [bikeSearch, setBikeSearch] = useState(selectedBike ? `${selectedBike.bike_id}${selectedBike.model ? ` - ${selectedBike.model}` : ''}` : '')
   const [bike_id, setBike_id] = useState(rental?.bike_id || preselectedBikeId || '')
   const [customer_name, setCustomer_name] = useState(rental?.customer_name || '')
   const [phone, setPhone] = useState(rental?.phone || '')
@@ -301,11 +303,27 @@ function RentalForm({
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (preselectedBikeId && !bike_id) setBike_id(preselectedBikeId)
-  }, [preselectedBikeId, bike_id])
+    const bikeUuid = rental?.bike_id || preselectedBikeId
+    const b = bikeUuid ? bikes.find((x) => x.id === bikeUuid) : null
+    if (b) {
+      setBike_id(b.id)
+      setBikeSearch(`${b.bike_id}${b.model ? ` - ${b.model}` : ''}`)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rental?.bike_id, preselectedBikeId])
+
+  const handleBikeInputChange = (value: string) => {
+    setBikeSearch(value)
+    const match = availableBikes.find((b) => {
+      const label = `${b.bike_id}${b.model ? ` - ${b.model}` : ''}`
+      return label === value || b.bike_id === value.trim()
+    })
+    setBike_id(match ? match.id : '')
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!bike_id) return
     setSaving(true)
     const nfc_code = rental?.nfc_code || ('r_' + Math.random().toString(36).slice(2, 11))
     const payload = {
@@ -350,14 +368,24 @@ function RentalForm({
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <Label>Bike *</Label>
-          <select value={bike_id} onChange={(e) => setBike_id(e.target.value)} required className="w-full border rounded-md px-3 py-2">
-            <option value="">Select bike</option>
+          <Input
+            list="bike-list"
+            value={bikeSearch}
+            onChange={(e) => handleBikeInputChange(e.target.value)}
+            placeholder="Enter bike ID (e.g. B001)"
+            required
+            className="w-full"
+          />
+          <datalist id="bike-list">
             {availableBikes.map((b) => (
-              <option key={b.id} value={b.id}>{b.bike_id} {b.model ? `- ${b.model}` : ''}</option>
+              <option key={b.id} value={`${b.bike_id}${b.model ? ` - ${b.model}` : ''}`} />
             ))}
-          </select>
+          </datalist>
         </div>
-        <div><Label>Customer name *</Label><Input value={customer_name} onChange={(e) => setCustomer_name(e.target.value)} required /></div>
+        <div>
+          <Label>Customer name *</Label>
+          <Input value={customer_name} onChange={(e) => setCustomer_name(e.target.value)} placeholder="Enter customer name" required />
+        </div>
         <div><Label>Phone</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
         <div className="grid grid-cols-2 gap-4">
           <div><Label>Start date *</Label><Input type="date" value={start_date} onChange={(e) => setStart_date(e.target.value)} required /></div>
