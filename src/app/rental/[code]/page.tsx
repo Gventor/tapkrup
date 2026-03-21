@@ -2,6 +2,7 @@ import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import Link from 'next/link'
+import { formatDate } from '@/lib/utils'
 import { Bike, Calendar, User, Phone, MessageCircle } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -36,11 +37,6 @@ export default async function RentalViewPage({ params }: { params: { code: strin
     .select('name')
     .eq('id', bike.business_id)
     .single()
-
-  const formatDate = (d: string) => {
-    const date = new Date(d)
-    return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
-  }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4">
@@ -80,6 +76,12 @@ export default async function RentalViewPage({ params }: { params: { code: strin
                 </p>
               </div>
             </div>
+
+            {(rental.rent_amount != null && rental.rent_amount > 0) && (
+              <div className="p-3 bg-gray-50 rounded-lg">
+                <p className="text-sm text-gray-600">Price: ฿{Number(rental.rent_amount).toLocaleString()}</p>
+              </div>
+            )}
 
             {rental.deposit > 0 && (
               <div className="p-3 bg-gray-50 rounded-lg">

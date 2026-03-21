@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Home, Edit, Trash2, Copy } from 'lucide-react'
+import { formatDate } from '@/lib/utils'
 
 interface Villa {
   id: string
@@ -187,7 +188,7 @@ export default function VillasPage({ params }: { params: { id: string } }) {
                 <div key={r.id} className="flex justify-between items-center p-3 border rounded-lg bg-gray-50">
                   <div>
                     <p className="font-semibold">{(r.villas as { name: string })?.name} – {r.tenant_name || 'Tenant'}</p>
-                    <p className="text-sm text-gray-600">{r.start_date} to {r.end_date}</p>
+                    <p className="text-sm text-gray-600">{formatDate(r.start_date)} to {formatDate(r.end_date)}</p>
                     {r.nfc_code && <span className="text-xs text-blue-600">/{r.nfc_code}</span>}
                   </div>
                   <div className="flex gap-2">

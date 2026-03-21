@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
 import { Card } from '@/components/ui/card'
+import { formatDate } from '@/lib/utils'
 import { Home, Calendar, Phone, MessageCircle } from 'lucide-react'
 import Link from 'next/link'
 
@@ -29,11 +30,6 @@ export default async function VillaGuestPage({ params }: { params: { code: strin
   const villa = rental.villas as { name?: string } | null
   if (!villa?.name) {
     notFound()
-  }
-
-  const formatDate = (d: string) => {
-    const date = new Date(d)
-    return date.toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' })
   }
 
   return (

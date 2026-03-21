@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Bike, Edit, Trash2, Copy } from 'lucide-react'
+import { formatDate } from '@/lib/utils'
 
 interface Bike {
   id: string
@@ -28,6 +29,7 @@ interface BikeRental {
   phone: string | null
   start_date: string
   end_date: string
+  rent_amount: number | null
   deposit: number
   km_start: number | null
   km_end: number | null
@@ -186,7 +188,7 @@ export default function BikesPage({ params }: { params: { id: string } }) {
                 <div key={r.id} className="flex justify-between items-center p-3 border rounded-lg bg-gray-50">
                   <div>
                     <p className="font-semibold">{(r.bikes as { bike_id: string; model?: string })?.bike_id} – {r.customer_name}</p>
-                    <p className="text-sm text-gray-600">{r.start_date} to {r.end_date}</p>
+                    <p className="text-sm text-gray-600">{formatDate(r.start_date)} to {formatDate(r.end_date)}{r.rent_amount != null && r.rent_amount > 0 ? ` · ฿${Number(r.rent_amount).toLocaleString()}` : ''}</p>
                     {r.nfc_code && <span className="text-xs text-blue-600">/{r.nfc_code}</span>}
                   </div>
                   <div className="flex gap-2">
@@ -294,6 +296,7 @@ function RentalForm({
   const [phone, setPhone] = useState(rental?.phone || '')
   const [start_date, setStart_date] = useState(rental?.start_date || '')
   const [end_date, setEnd_date] = useState(rental?.end_date || '')
+  const [rent_amount, setRent_amount] = useState(rental?.rent_amount != null ? String(rental.rent_amount) : '')
   const [deposit, setDeposit] = useState(rental?.deposit != null ? String(rental.deposit) : '')
   const [km_start, setKm_start] = useState(rental?.km_start != null ? String(rental.km_start) : '')
   const [km_end, setKm_end] = useState(rental?.km_end != null ? String(rental.km_end) : '')
@@ -332,6 +335,7 @@ function RentalForm({
       phone: phone || null,
       start_date,
       end_date,
+      rent_amount: rent_amount ? Number(rent_amount) : null,
       deposit: Number(deposit) || 0,
       km_start: km_start ? Number(km_start) : null,
       km_end: km_end ? Number(km_end) : null,
@@ -391,7 +395,10 @@ function RentalForm({
           <div><Label>Start date *</Label><Input type="date" value={start_date} onChange={(e) => setStart_date(e.target.value)} required /></div>
           <div><Label>End date *</Label><Input type="date" value={end_date} onChange={(e) => setEnd_date(e.target.value)} required /></div>
         </div>
-        <div><Label>Deposit (฿)</Label><Input type="number" value={deposit} onChange={(e) => setDeposit(e.target.value)} /></div>
+        <div className="grid grid-cols-2 gap-4">
+          <div><Label>Price (฿)</Label><Input type="number" value={rent_amount} onChange={(e) => setRent_amount(e.target.value)} placeholder="Enter rental price" /></div>
+          <div><Label>Deposit (฿)</Label><Input type="number" value={deposit} onChange={(e) => setDeposit(e.target.value)} /></div>
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div><Label>KM start</Label><Input type="number" value={km_start} onChange={(e) => setKm_start(e.target.value)} /></div>
           <div><Label>KM end</Label><Input type="number" value={km_end} onChange={(e) => setKm_end(e.target.value)} placeholder="When returned" /></div>
