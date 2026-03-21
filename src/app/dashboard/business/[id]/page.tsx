@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import type { Business, Page } from '@/types/database.types'
 import Link from 'next/link'
-import { ArrowLeft, Plus, ExternalLink, Edit, Copy } from 'lucide-react'
+import { ArrowLeft, Plus, ExternalLink, Edit, Copy, Home } from 'lucide-react'
 import Image from 'next/image'
 
 export default function BusinessPagesPage({ params }: { params: { id: string } }) {
@@ -111,13 +111,20 @@ export default function BusinessPagesPage({ params }: { params: { id: string } }
           </Link>
         </div>
 
-        {/* Add Page Button */}
-        <Link href={`/dashboard/business/${business.id}/page/new`}>
-          <Button className="w-full sm:w-auto h-12 gap-2" size="lg">
-            <Plus className="h-5 w-5" />
-            Add New Page
-          </Button>
-        </Link>
+        <div className="flex flex-wrap gap-3">
+          <Link href={`/dashboard/business/${business.id}/page/new`}>
+            <Button className="h-12 gap-2" size="lg">
+              <Plus className="h-5 w-5" />
+              Add New Page
+            </Button>
+          </Link>
+          <Link href={`/dashboard/business/${business.id}/villas`}>
+            <Button variant="outline" className="h-12 gap-2" size="lg">
+              <Home className="h-5 w-5" />
+              Villa Rentals
+            </Button>
+          </Link>
+        </div>
 
         {/* Pages List */}
         {pages.length === 0 ? (

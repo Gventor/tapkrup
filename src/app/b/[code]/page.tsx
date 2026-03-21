@@ -19,20 +19,38 @@ export default async function NfcRedirectPage({ params }: { params: { code: stri
     .eq('code', params.code)
     .single()
 
-  if (!nfcLink || !nfcLink.pages) {
-    notFound()
+  if (nfcLink?.pages) {
+    const page = nfcLink.pages as { sub_slug?: string; business_id?: string; businesses?: { slug?: string } }
+    const business = page.businesses as { slug?: string } | undefined
+
+    if (business?.slug) {
+      if (page.sub_slug) {
+        redirect(`/${business.slug}/${page.sub_slug}`)
+      } else {
+        redirect(`/${business.slug}`)
+      }
+    }
   }
 
-  const page = nfcLink.pages as any
-  const business = page.businesses as any
+  const { data: bikeRental } = await supabase
+    .from('rentals')
+    .select('id, nfc_code')
+    .eq('nfc_code', params.code)
+    .single()
 
-  if (!business?.slug) {
-    notFound()
+  if (bikeRental?.nfc_code) {
+    redirect(`/rental/${params.code}`)
   }
 
-  if (page.sub_slug) {
-    redirect(`/${business.slug}/${page.sub_slug}`)
-  } else {
-    redirect(`/${business.slug}`)
+  const { data: villaRental } = await supabase
+    .from('villa_rentals')
+    .select('id, nfc_code')
+    .eq('nfc_code', params.code)
+    .single()
+
+  if (villaRental?.nfc_code) {
+    redirect(`/villa/${params.code}`)
   }
+
+  notFound()
 }

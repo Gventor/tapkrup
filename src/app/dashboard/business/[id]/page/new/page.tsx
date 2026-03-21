@@ -22,6 +22,7 @@ import PriceListBlock from '@/components/blocks/editors/PriceListBlock'
 import MenuBlock from '@/components/blocks/editors/MenuBlock'
 import PhotoGalleryBlock from '@/components/blocks/editors/PhotoGalleryBlock'
 import SocialMediaBlock from '@/components/blocks/editors/SocialMediaBlock'
+import BikesBlock from '@/components/blocks/editors/BikesBlock'
 
 export default function NewPageForm({ params }: { params: { id: string } }) {
   const [business, setBusiness] = useState<Business | null>(null)
@@ -188,6 +189,8 @@ export default function NewPageForm({ params }: { params: { id: string } }) {
         return <PhotoGalleryBlock key={block.tempId} {...commonProps} />
       case 'social_media':
         return <SocialMediaBlock key={block.tempId} {...commonProps} />
+      case 'bikes':
+        return <BikesBlock key={block.tempId} {...commonProps} />
       default:
         return null
     }

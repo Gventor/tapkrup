@@ -43,6 +43,7 @@ export type BlockType =
   | 'price_list'
   | 'menu'
   | 'service_list'
+  | 'bikes'
   | 'vehicle_fleet'
   | 'room_types'
   | 'tour_packages'

@@ -14,6 +14,7 @@ import PriceListBlockDisplay from '@/components/blocks/display/PriceListBlockDis
 import MenuBlockDisplay from '@/components/blocks/display/MenuBlockDisplay'
 import PhotoGalleryBlockDisplay from '@/components/blocks/display/PhotoGalleryBlockDisplay'
 import SocialMediaBlockDisplay from '@/components/blocks/display/SocialMediaBlockDisplay'
+import BikesBlockDisplay from '@/components/blocks/display/BikesBlockDisplay'
 
 export const dynamic = 'force-dynamic'
 
@@ -82,6 +83,8 @@ export default async function SubPage({ params }: { params: { slug: string; subs
         return <PhotoGalleryBlockDisplay key={block.id} data={block.data} />
       case 'social_media':
         return <SocialMediaBlockDisplay key={block.id} data={block.data} />
+      case 'bikes':
+        return <BikesBlockDisplay key={block.id} businessId={business.id} blockId={block.id} data={block.data || {}} />
       default:
         return null
     }
