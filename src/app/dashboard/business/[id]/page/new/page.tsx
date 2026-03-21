@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import bcrypt from 'bcryptjs'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -28,6 +29,8 @@ export default function NewPageForm({ params }: { params: { id: string } }) {
   const [subSlug, setSubSlug] = useState('')
   const [isMain, setIsMain] = useState(false)
   const [blocks, setBlocks] = useState<Array<{ type: string; data: any; tempId: string }>>([])
+  const [usePassword, setUsePassword] = useState(false)
+  const [password, setPassword] = useState('')
   const [saving, setSaving] = useState(false)
   const [message, setMessage] = useState('')
   const router = useRouter()
@@ -96,8 +99,20 @@ export default function NewPageForm({ params }: { params: { id: string } }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (usePassword && !password.trim()) {
+      setMessage('Error: Please enter a password')
+      return
+    }
+    if (usePassword && password.length < 4) {
+      setMessage('Error: Password must be at least 4 characters')
+      return
+    }
     setSaving(true)
     setMessage('')
+
+    const passwordHash = usePassword && password
+      ? await bcrypt.hash(password, 10)
+      : null
 
     const { data: pageData, error: pageError } = await supabase
       .from('pages')
@@ -106,6 +121,7 @@ export default function NewPageForm({ params }: { params: { id: string } }) {
         title,
         sub_slug: isMain ? null : subSlug,
         is_main: isMain,
+        password_hash: passwordHash,
       })
       .select()
       .single()
@@ -236,6 +252,38 @@ export default function NewPageForm({ params }: { params: { id: string } }) {
                 <Label htmlFor="is_main" className="cursor-pointer">
                   Set as main page (will be shown at /{business.slug})
                 </Label>
+              </div>
+
+              <div className="border-t pt-4 mt-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="use_password"
+                    checked={usePassword}
+                    onChange={(e) => {
+                      setUsePassword(e.target.checked)
+                      if (!e.target.checked) setPassword('')
+                    }}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="use_password" className="cursor-pointer">
+                    Password protect this page (staff only)
+                  </Label>
+                </div>
+                {usePassword && (
+                  <div className="space-y-2 pl-6">
+                    <Label htmlFor="page_password">Password</Label>
+                    <Input
+                      id="page_password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter password for staff"
+                      minLength={4}
+                    />
+                    <p className="text-xs text-gray-500">Share this password with staff to let them access this page.</p>
+                  </div>
+                )}
               </div>
             </div>
           </Card>

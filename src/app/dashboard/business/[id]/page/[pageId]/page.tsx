@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import bcrypt from 'bcryptjs'
 import { supabase } from '@/lib/supabase'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,6 +30,8 @@ export default function EditPageForm({ params }: { params: { id: string; pageId:
   const [subSlug, setSubSlug] = useState('')
   const [isMain, setIsMain] = useState(false)
   const [blocks, setBlocks] = useState<Array<{ id?: string; type: string; data: any; tempId: string }>>([])
+  const [usePassword, setUsePassword] = useState(false)
+  const [password, setPassword] = useState('')
   const [saving, setSaving] = useState(false)
   const [deleting, setDeleting] = useState(false)
   const [message, setMessage] = useState('')
@@ -61,6 +64,7 @@ export default function EditPageForm({ params }: { params: { id: string; pageId:
       setTitle(pageData.title)
       setSubSlug(pageData.sub_slug || '')
       setIsMain(pageData.is_main)
+      setUsePassword(!!pageData.password_hash)
     }
 
     const { data: blocksData } = await supabase
@@ -126,8 +130,21 @@ export default function EditPageForm({ params }: { params: { id: string; pageId:
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (usePassword && password.length > 0 && password.length < 4) {
+      setMessage('Error: Password must be at least 4 characters')
+      return
+    }
     setSaving(true)
     setMessage('')
+
+    let passwordHash: string | null
+    if (!usePassword) {
+      passwordHash = null
+    } else if (password) {
+      passwordHash = await bcrypt.hash(password, 10)
+    } else {
+      passwordHash = page?.password_hash ?? null
+    }
 
     const { error: pageError } = await supabase
       .from('pages')
@@ -135,6 +152,7 @@ export default function EditPageForm({ params }: { params: { id: string; pageId:
         title,
         sub_slug: isMain ? null : subSlug,
         is_main: isMain,
+        password_hash: passwordHash,
       })
       .eq('id', params.pageId)
 
@@ -301,6 +319,38 @@ export default function EditPageForm({ params }: { params: { id: string; pageId:
                 <Label htmlFor="is_main" className="cursor-pointer">
                   Set as main page (will be shown at /{business.slug})
                 </Label>
+              </div>
+
+              <div className="border-t pt-4 mt-4 space-y-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="use_password"
+                    checked={usePassword}
+                    onChange={(e) => {
+                      setUsePassword(e.target.checked)
+                      if (!e.target.checked) setPassword('')
+                    }}
+                    className="w-4 h-4"
+                  />
+                  <Label htmlFor="use_password" className="cursor-pointer">
+                    Password protect this page (staff only)
+                  </Label>
+                </div>
+                {usePassword && (
+                  <div className="space-y-2 pl-6">
+                    <Label htmlFor="page_password">Password {page?.password_hash ? '(leave blank to keep current)' : ''}</Label>
+                    <Input
+                      id="page_password"
+                      type="password"
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      placeholder="Enter password for staff"
+                      minLength={4}
+                    />
+                    <p className="text-xs text-gray-500">Share this password with staff to let them access this page.</p>
+                  </div>
+                )}
               </div>
             </div>
           </Card>

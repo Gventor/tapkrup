@@ -14,6 +14,7 @@ export interface Page {
   title: string
   sub_slug: string | null
   is_main: boolean
+  password_hash: string | null
   created_at: string
   updated_at: string
 }

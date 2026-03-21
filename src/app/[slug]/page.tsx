@@ -1,6 +1,8 @@
 import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
+import { cookies } from 'next/headers'
 import Image from 'next/image'
+import PasswordGate from '@/components/PasswordGate'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -45,6 +47,21 @@ export default async function BusinessPage({ params }: { params: { slug: string 
         </div>
       </main>
     )
+  }
+
+  if (mainPage.password_hash) {
+    const cookieStore = await cookies()
+    const authCookie = cookieStore.get(`page_auth_${mainPage.id.replace(/-/g, '_')}`)
+    if (!authCookie?.value) {
+      return (
+        <PasswordGate
+          pageId={mainPage.id}
+          pageTitle={mainPage.title}
+          businessName={business.name}
+          onSuccess={() => {}}
+        />
+      )
+    }
   }
 
   const { data: blocks } = await supabase

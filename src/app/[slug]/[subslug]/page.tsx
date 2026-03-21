@@ -1,6 +1,8 @@
 import { supabase } from '@/lib/supabase'
 import { notFound } from 'next/navigation'
+import { cookies } from 'next/headers'
 import { Card } from '@/components/ui/card'
+import PasswordGate from '@/components/PasswordGate'
 import Image from 'next/image'
 import ContactBlockDisplay from '@/components/blocks/display/ContactBlockDisplay'
 import LocationBlockDisplay from '@/components/blocks/display/LocationBlockDisplay'
@@ -35,6 +37,21 @@ export default async function SubPage({ params }: { params: { slug: string; subs
 
   if (!page) {
     notFound()
+  }
+
+  if (page.password_hash) {
+    const cookieStore = await cookies()
+    const authCookie = cookieStore.get(`page_auth_${page.id.replace(/-/g, '_')}`)
+    if (!authCookie?.value) {
+      return (
+        <PasswordGate
+          pageId={page.id}
+          pageTitle={page.title}
+          businessName={business.name}
+          onSuccess={() => {}}
+        />
+      )
+    }
   }
 
   const { data: blocks } = await supabase
