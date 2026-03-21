@@ -3,8 +3,6 @@ import { notFound } from 'next/navigation'
 import { cookies } from 'next/headers'
 import Image from 'next/image'
 import PasswordGate from '@/components/PasswordGate'
-import Link from 'next/link'
-import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import ContactBlockDisplay from '@/components/blocks/display/ContactBlockDisplay'
 import LocationBlockDisplay from '@/components/blocks/display/LocationBlockDisplay'
@@ -128,22 +126,6 @@ export default async function BusinessPage({ params }: { params: { slug: string 
           <div className="space-y-4">
             {blocks.map(block => renderBlock(block))}
           </div>
-        )}
-
-        {/* Other Pages */}
-        {pages && pages.length > 1 && (
-          <Card className="p-6">
-            <h3 className="font-bold text-lg mb-4">More Pages</h3>
-            <div className="grid grid-cols-2 gap-3">
-              {pages.filter(p => p.id !== mainPage.id).map((page) => (
-                <Link key={page.id} href={`/${business.slug}/${page.sub_slug}`}>
-                  <Button variant="outline" className="w-full h-14 border-[var(--tapkrup-navy)] text-[var(--tapkrup-navy)] hover:bg-[var(--tapkrup-navy)] hover:text-white">
-                    {page.title}
-                  </Button>
-                </Link>
-              ))}
-            </div>
-          </Card>
         )}
 
         {/* Footer */}
