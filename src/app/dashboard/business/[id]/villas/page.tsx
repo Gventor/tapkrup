@@ -34,6 +34,8 @@ interface VillaRental {
   agent_phone: string | null
   agent_line: string | null
   agent_whatsapp: string | null
+  agent_telegram: string | null
+  agent_wechat: string | null
   next_payment_date: string | null
   notes: string | null
   nfc_code: string | null
@@ -268,6 +270,8 @@ function RentalForm({
   onSaved: () => void
   onCancel: () => void
 }) {
+  const selectedVilla = villas.find((v) => v.id === (rental?.villa_id || preselectedVillaId))
+  const [villaSearch, setVillaSearch] = useState(selectedVilla ? selectedVilla.name : '')
   const [villa_id, setVilla_id] = useState(rental?.villa_id || preselectedVillaId || '')
   const [start_date, setStart_date] = useState(rental?.start_date || '')
   const [end_date, setEnd_date] = useState(rental?.end_date || '')
@@ -280,16 +284,31 @@ function RentalForm({
   const [agent_phone, setAgent_phone] = useState(rental?.agent_phone || '')
   const [agent_line, setAgent_line] = useState(rental?.agent_line || '')
   const [agent_whatsapp, setAgent_whatsapp] = useState(rental?.agent_whatsapp || '')
+  const [agent_telegram, setAgent_telegram] = useState(rental?.agent_telegram || '')
+  const [agent_wechat, setAgent_wechat] = useState(rental?.agent_wechat || '')
   const [next_payment_date, setNext_payment_date] = useState(rental?.next_payment_date || '')
   const [notes, setNotes] = useState(rental?.notes || '')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
-    if (preselectedVillaId && !villa_id) setVilla_id(preselectedVillaId)
-  }, [preselectedVillaId, villa_id])
+    const villaUuid = rental?.villa_id || preselectedVillaId
+    const v = villaUuid ? villas.find((x) => x.id === villaUuid) : null
+    if (v) {
+      setVilla_id(v.id)
+      setVillaSearch(v.name)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rental?.villa_id, preselectedVillaId])
+
+  const handleVillaInputChange = (value: string) => {
+    setVillaSearch(value)
+    const match = villas.find((v) => v.name === value || v.name.toLowerCase() === value.trim().toLowerCase())
+    setVilla_id(match ? match.id : '')
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    if (!villa_id) return
     setSaving(true)
     const nfc_code = rental?.nfc_code || ('v_' + Math.random().toString(36).slice(2, 11))
     const payload = {
@@ -323,12 +342,19 @@ function RentalForm({
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <Label>Villa *</Label>
-          <select value={villa_id} onChange={(e) => setVilla_id(e.target.value)} required className="w-full border rounded-md px-3 py-2">
-            <option value="">Select villa</option>
+          <Input
+            list="villa-list"
+            value={villaSearch}
+            onChange={(e) => handleVillaInputChange(e.target.value)}
+            placeholder="Enter villa name (e.g. Villa A1)"
+            required
+            className="w-full"
+          />
+          <datalist id="villa-list">
             {villas.map((v) => (
-              <option key={v.id} value={v.id}>{v.name}</option>
+              <option key={v.id} value={v.name} />
             ))}
-          </select>
+          </datalist>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div><Label>Start date *</Label><Input type="date" value={start_date} onChange={(e) => setStart_date(e.target.value)} required /></div>
@@ -347,10 +373,12 @@ function RentalForm({
           <div><Label>ID number</Label><Input value={tenant_id_number} onChange={(e) => setTenant_id_number(e.target.value)} /></div>
         </div>
         <h4 className="font-semibold text-sm">Agent contact (shown to guest)</h4>
-        <div className="grid grid-cols-3 gap-4">
-          <div><Label>Phone</Label><Input value={agent_phone} onChange={(e) => setAgent_phone(e.target.value)} placeholder="Call" /></div>
-          <div><Label>LINE</Label><Input value={agent_line} onChange={(e) => setAgent_line(e.target.value)} /></div>
-          <div><Label>WhatsApp</Label><Input value={agent_whatsapp} onChange={(e) => setAgent_whatsapp(e.target.value)} /></div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div><Label>Phone</Label><Input value={agent_phone} onChange={(e) => setAgent_phone(e.target.value)} placeholder="+66812345678" /></div>
+          <div><Label>LINE</Label><Input value={agent_line} onChange={(e) => setAgent_line(e.target.value)} placeholder="https://line.me/ti/p/..." /></div>
+          <div><Label>WhatsApp</Label><Input value={agent_whatsapp} onChange={(e) => setAgent_whatsapp(e.target.value)} placeholder="66812345678" /></div>
+          <div><Label>Telegram</Label><Input value={agent_telegram} onChange={(e) => setAgent_telegram(e.target.value)} placeholder="https://t.me/..." /></div>
+          <div><Label>WeChat ID</Label><Input value={agent_wechat} onChange={(e) => setAgent_wechat(e.target.value)} placeholder="wechat_username" /></div>
         </div>
         <div><Label>Notes (admin only)</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
         <div className="flex gap-2">

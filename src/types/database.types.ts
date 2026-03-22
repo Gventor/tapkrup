@@ -44,6 +44,7 @@ export type BlockType =
   | 'menu'
   | 'service_list'
   | 'bikes'
+  | 'villas'
   | 'vehicle_fleet'
   | 'room_types'
   | 'tour_packages'

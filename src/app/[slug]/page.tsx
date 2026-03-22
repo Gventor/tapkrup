@@ -15,6 +15,7 @@ import MenuBlockDisplay from '@/components/blocks/display/MenuBlockDisplay'
 import PhotoGalleryBlockDisplay from '@/components/blocks/display/PhotoGalleryBlockDisplay'
 import SocialMediaBlockDisplay from '@/components/blocks/display/SocialMediaBlockDisplay'
 import BikesBlockDisplay from '@/components/blocks/display/BikesBlockDisplay'
+import VillasBlockDisplay from '@/components/blocks/display/VillasBlockDisplay'
 
 export const dynamic = 'force-dynamic'
 
@@ -93,6 +94,8 @@ export default async function BusinessPage({ params }: { params: { slug: string 
         return <SocialMediaBlockDisplay key={block.id} data={block.data} />
       case 'bikes':
         return <BikesBlockDisplay key={block.id} businessId={business.id} blockId={block.id} data={block.data || {}} />
+      case 'villas':
+        return <VillasBlockDisplay key={block.id} businessId={business.id} blockId={block.id} data={block.data || {}} />
       default:
         return null
     }

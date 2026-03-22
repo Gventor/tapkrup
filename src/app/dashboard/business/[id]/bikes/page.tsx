@@ -36,6 +36,8 @@ interface BikeRental {
   agent_phone: string | null
   agent_line: string | null
   agent_whatsapp: string | null
+  agent_telegram: string | null
+  agent_wechat: string | null
   nfc_code: string | null
 }
 
@@ -303,6 +305,8 @@ function RentalForm({
   const [agent_phone, setAgent_phone] = useState(rental?.agent_phone || '')
   const [agent_line, setAgent_line] = useState(rental?.agent_line || '')
   const [agent_whatsapp, setAgent_whatsapp] = useState(rental?.agent_whatsapp || '')
+  const [agent_telegram, setAgent_telegram] = useState(rental?.agent_telegram || '')
+  const [agent_wechat, setAgent_wechat] = useState(rental?.agent_wechat || '')
   const [saving, setSaving] = useState(false)
 
   useEffect(() => {
@@ -342,6 +346,8 @@ function RentalForm({
       agent_phone: agent_phone || null,
       agent_line: agent_line || null,
       agent_whatsapp: agent_whatsapp || null,
+      agent_telegram: agent_telegram || null,
+      agent_wechat: agent_wechat || null,
     }
     if (rental) {
       await supabase.from('rentals').update(payload).eq('id', rental.id)
@@ -404,10 +410,12 @@ function RentalForm({
           <div><Label>KM end</Label><Input type="number" value={km_end} onChange={(e) => setKm_end(e.target.value)} placeholder="When returned" /></div>
         </div>
         <h4 className="font-semibold text-sm">Contact (shown to guest)</h4>
-        <div className="grid grid-cols-3 gap-4">
-          <div><Label>Phone</Label><Input value={agent_phone} onChange={(e) => setAgent_phone(e.target.value)} placeholder="Call" /></div>
-          <div><Label>LINE</Label><Input value={agent_line} onChange={(e) => setAgent_line(e.target.value)} /></div>
-          <div><Label>WhatsApp</Label><Input value={agent_whatsapp} onChange={(e) => setAgent_whatsapp(e.target.value)} /></div>
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+          <div><Label>Phone</Label><Input value={agent_phone} onChange={(e) => setAgent_phone(e.target.value)} placeholder="+66812345678" /></div>
+          <div><Label>LINE</Label><Input value={agent_line} onChange={(e) => setAgent_line(e.target.value)} placeholder="https://line.me/ti/p/..." /></div>
+          <div><Label>WhatsApp</Label><Input value={agent_whatsapp} onChange={(e) => setAgent_whatsapp(e.target.value)} placeholder="66812345678" /></div>
+          <div><Label>Telegram</Label><Input value={agent_telegram} onChange={(e) => setAgent_telegram(e.target.value)} placeholder="https://t.me/..." /></div>
+          <div><Label>WeChat ID</Label><Input value={agent_wechat} onChange={(e) => setAgent_wechat(e.target.value)} placeholder="wechat_username" /></div>
         </div>
         {rental?.nfc_code && <p className="text-xs text-gray-500">Link: /b/{rental.nfc_code}</p>}
         <div className="flex gap-2">

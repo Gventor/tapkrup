@@ -4,7 +4,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import BlockWrapper from '../BlockWrapper'
 
-interface BikesBlockProps {
+interface VillasBlockProps {
   data: {
     phone?: string
     whatsapp?: string
@@ -22,7 +22,7 @@ interface BikesBlockProps {
   canMoveDown?: boolean
 }
 
-export default function BikesBlock({
+export default function VillasBlock({
   data = {},
   onChange,
   onMoveUp,
@@ -30,12 +30,12 @@ export default function BikesBlock({
   onDelete,
   canMoveUp,
   canMoveDown,
-}: BikesBlockProps) {
+}: VillasBlockProps) {
   const d = data as { phone?: string; whatsapp?: string; line?: string; telegram?: string; wechat?: string; address?: string; google_maps?: string }
   return (
     <BlockWrapper
-      title="Bike Rental"
-      icon="🚴"
+      title="Villa Rentals"
+      icon="🏠"
       onMoveUp={onMoveUp}
       onMoveDown={onMoveDown}
       onDelete={onDelete}
@@ -43,7 +43,7 @@ export default function BikesBlock({
       canMoveDown={canMoveDown}
     >
       <p className="text-sm text-gray-600 mb-4">
-        Add and manage bikes from <strong>Dashboard → Bike Rentals</strong>. This block will display your bike list on the public page.
+        Add and manage villas from <strong>Dashboard → Villa Rentals</strong>. This block will display your villa list on the public page.
       </p>
       <h4 className="font-semibold text-sm mb-2">Contact (shown on public page)</h4>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">

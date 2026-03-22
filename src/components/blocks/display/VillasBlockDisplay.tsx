@@ -4,19 +4,17 @@ import { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import Link from 'next/link'
-import { Bike, Phone, MessageCircle, Send, MapPin, Navigation } from 'lucide-react'
+import { Home, Phone, MessageCircle, Send, MapPin, Navigation } from 'lucide-react'
 
-interface Bike {
+interface Villa {
   id: string
-  bike_id: string
-  plate_number: string | null
-  model: string | null
-  status: string
-  price_per_day: number
-  odometer_km: number | null
+  name: string
+  address: string | null
+  beds: number | null
+  description: string | null
 }
 
-interface BikesBlockDisplayProps {
+interface VillasBlockDisplayProps {
   businessId: string
   blockId?: string
   data?: {
@@ -30,15 +28,15 @@ interface BikesBlockDisplayProps {
   }
 }
 
-export default function BikesBlockDisplay({ businessId, data = {} }: BikesBlockDisplayProps) {
-  const [bikes, setBikes] = useState<Bike[]>([])
+export default function VillasBlockDisplay({ businessId, data = {} }: VillasBlockDisplayProps) {
+  const [villas, setVillas] = useState<Villa[]>([])
   const [loaded, setLoaded] = useState(false)
 
   useEffect(() => {
-    fetch(`/api/bikes?businessId=${businessId}`)
+    fetch(`/api/villas?businessId=${businessId}`)
       .then((res) => res.json())
       .then((body) => {
-        if (Array.isArray(body)) setBikes(body)
+        if (Array.isArray(body)) setVillas(body)
         setLoaded(true)
       })
       .catch(() => setLoaded(true))
@@ -57,34 +55,24 @@ export default function BikesBlockDisplay({ businessId, data = {} }: BikesBlockD
   return (
     <Card className="p-6">
       <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-        <Bike className="h-5 w-5 text-[var(--tapkrup-navy)]" />
-        Bikes
+        <Home className="h-5 w-5 text-[var(--tapkrup-navy)]" />
+        Villas
       </h3>
 
       {!loaded ? (
         <p className="text-gray-500">Loading...</p>
-      ) : bikes.length === 0 ? (
-        <p className="text-gray-500">No bikes yet.</p>
+      ) : villas.length === 0 ? (
+        <p className="text-gray-500">No villas yet.</p>
       ) : (
         <div className="space-y-3 mb-6">
-          {bikes.map((bike) => (
+          {villas.map((villa) => (
             <div
-              key={bike.id}
-              className="flex items-center justify-between p-3 border rounded-lg bg-gray-50"
+              key={villa.id}
+              className="p-3 border rounded-lg bg-gray-50"
             >
-              <div>
-                <p className="font-semibold">{bike.bike_id} {bike.model ? `- ${bike.model}` : ''}</p>
-                <p className="text-sm text-gray-600">
-                  ฿{Number(bike.price_per_day).toLocaleString()}/day
-                  {bike.status !== 'available' && (
-                    <span className={`ml-2 px-2 py-0.5 rounded text-xs ${
-                      bike.status === 'rented' ? 'bg-amber-100 text-amber-800' : 'bg-gray-200'
-                    }`}>
-                      {bike.status}
-                    </span>
-                  )}
-                </p>
-              </div>
+              <p className="font-semibold">{villa.name}</p>
+              {villa.address && <p className="text-sm text-gray-600">{villa.address}</p>}
+              {villa.beds != null && <p className="text-sm text-gray-500">{villa.beds} bed{villa.beds !== 1 ? 's' : ''}</p>}
             </div>
           ))}
         </div>

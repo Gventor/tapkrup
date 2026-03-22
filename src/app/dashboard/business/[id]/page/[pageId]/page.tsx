@@ -23,6 +23,7 @@ import MenuBlock from '@/components/blocks/editors/MenuBlock'
 import PhotoGalleryBlock from '@/components/blocks/editors/PhotoGalleryBlock'
 import SocialMediaBlock from '@/components/blocks/editors/SocialMediaBlock'
 import BikesBlock from '@/components/blocks/editors/BikesBlock'
+import VillasBlock from '@/components/blocks/editors/VillasBlock'
 
 export default function EditPageForm({ params }: { params: { id: string; pageId: string } }) {
   const [business, setBusiness] = useState<Business | null>(null)
@@ -247,6 +248,8 @@ export default function EditPageForm({ params }: { params: { id: string; pageId:
         return <SocialMediaBlock key={block.tempId} {...commonProps} />
       case 'bikes':
         return <BikesBlock key={block.tempId} {...commonProps} />
+      case 'villas':
+        return <VillasBlock key={block.tempId} {...commonProps} />
       default:
         return null
     }

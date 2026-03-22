@@ -35,6 +35,7 @@ export default function BlockSelector({ onSelectBlock }: BlockSelectorProps) {
         { type: 'price_list', label: 'Price List', icon: '💰' },
         { type: 'menu', label: 'Menu (Food/Drinks)', icon: '🍽️' },
         { type: 'bikes', label: 'Bike Rental', icon: '🚴' },
+        { type: 'villas', label: 'Villa Rentals', icon: '🏠' },
       ],
     },
     {

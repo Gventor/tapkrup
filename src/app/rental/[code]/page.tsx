@@ -3,7 +3,7 @@ import { notFound } from 'next/navigation'
 import { Card } from '@/components/ui/card'
 import Link from 'next/link'
 import { formatDate } from '@/lib/utils'
-import { Bike, Calendar, User, Phone, MessageCircle } from 'lucide-react'
+import { Bike, Calendar, User, Phone, MessageCircle, Send } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
@@ -97,7 +97,7 @@ export default async function RentalViewPage({ params }: { params: { code: strin
               </div>
             )}
 
-            {(rental.agent_phone || rental.agent_line || rental.agent_whatsapp) && (
+            {(rental.agent_phone || rental.agent_line || rental.agent_whatsapp || rental.agent_telegram || rental.agent_wechat) && (
               <div className="pt-4">
                 <p className="font-semibold text-gray-900 mb-3">Contact rental shop</p>
                 <div className="flex flex-col gap-2">
@@ -131,6 +131,26 @@ export default async function RentalViewPage({ params }: { params: { code: strin
                       <MessageCircle className="h-5 w-5" />
                       WhatsApp
                     </Link>
+                  )}
+                  {rental.agent_telegram && (
+                    <Link
+                      href={rental.agent_telegram.startsWith('http') ? rental.agent_telegram : `https://t.me/${rental.agent_telegram.replace('@', '')}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-3 p-4 rounded-xl bg-[var(--tapkrup-green)] hover:bg-[var(--tapkrup-green-dark)] text-white font-semibold transition-colors"
+                    >
+                      <Send className="h-5 w-5" />
+                      Telegram
+                    </Link>
+                  )}
+                  {rental.agent_wechat && (
+                    <div className="flex items-center gap-3 p-4 rounded-xl bg-[var(--tapkrup-green)] text-white">
+                      <MessageCircle className="h-5 w-5" />
+                      <div>
+                        <span className="font-semibold">WeChat</span>
+                        <p className="text-sm opacity-90">ID: {rental.agent_wechat}</p>
+                      </div>
+                    </div>
                   )}
                 </div>
               </div>
