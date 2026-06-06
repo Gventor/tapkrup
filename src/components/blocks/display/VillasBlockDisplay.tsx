@@ -115,13 +115,15 @@ export default function VillasBlockDisplay({ businessId, data = {} }: VillasBloc
               </Link>
             )}
             {data.wechat && (
-              <div className="bg-[var(--tapkrup-green)] text-white rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-1">
-                  <MessageCircle className="h-5 w-5" />
-                  <span className="font-semibold">WeChat</span>
-                </div>
-                <p className="text-sm">ID: {data.wechat}</p>
-              </div>
+              <Link
+                href={data.wechat.startsWith('http') ? data.wechat : `https://${data.wechat}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 bg-[var(--tapkrup-green)] hover:bg-[var(--tapkrup-green-dark)] text-white rounded-xl p-4 font-semibold transition-colors"
+              >
+                <MessageCircle className="h-5 w-5" />
+                WeChat
+              </Link>
             )}
           </div>
         </div>

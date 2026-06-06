@@ -7,7 +7,15 @@ import Link from 'next/link'
 
 export const dynamic = 'force-dynamic'
 
-export default async function VillaGuestPage({ params }: { params: { code: string } }) {
+export default async function VillaRentalGuestPage({ params }: { params: { slug: string; code: string } }) {
+  const { data: business } = await supabase
+    .from('businesses')
+    .select('id, slug')
+    .eq('slug', params.slug)
+    .single()
+
+  if (!business) notFound()
+
   const { data: rental, error } = await supabase
     .from('villa_rentals')
     .select(`
@@ -19,19 +27,15 @@ export default async function VillaGuestPage({ params }: { params: { code: strin
       agent_whatsapp,
       agent_telegram,
       agent_wechat,
-      villas (name)
+      villas (name, business_id)
     `)
     .eq('nfc_code', params.code)
     .single()
 
-  if (error || !rental) {
-    notFound()
-  }
+  if (error || !rental) notFound()
 
-  const villa = rental.villas as { name?: string } | null
-  if (!villa?.name) {
-    notFound()
-  }
+  const villa = rental.villas as { name?: string; business_id?: string } | null
+  if (!villa?.name || villa.business_id !== business.id) notFound()
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4">

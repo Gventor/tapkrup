@@ -70,12 +70,12 @@ export default function MessagingBlock({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="wechat">WeChat ID</Label>
+          <Label htmlFor="wechat">WeChat</Label>
           <Input
             id="wechat"
             value={data.wechat || ''}
             onChange={(e) => onChange({ ...data, wechat: e.target.value })}
-            placeholder="wechat_username"
+            placeholder="https://weixin.qq.com/..."
           />
         </div>
       </div>

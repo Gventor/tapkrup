@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Home, Edit, Trash2, Copy } from 'lucide-react'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatThb, formatThbInput, parseThbInput, handleThbInputChange, getPublicUrl } from '@/lib/utils'
+import QrLinkButton from '@/components/QrLinkButton'
 
 interface Villa {
   id: string
@@ -36,7 +37,6 @@ interface VillaRental {
   agent_whatsapp: string | null
   agent_telegram: string | null
   agent_wechat: string | null
-  next_payment_date: string | null
   notes: string | null
   nfc_code: string | null
 }
@@ -102,9 +102,11 @@ export default function VillasPage({ params }: { params: { id: string } }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id])
 
+  const getNfcPath = (code: string) => `/${business?.slug}/villarentals/${code}`
+
   const copyNfcLink = (code: string) => {
-    if (typeof window === 'undefined') return
-    const url = `${window.location.origin}/b/${code}`
+    if (typeof window === 'undefined' || !business) return
+    const url = getPublicUrl(getNfcPath(code), window.location.origin)
     navigator.clipboard.writeText(url)
     setCopiedCode(code)
     setTimeout(() => setCopiedCode(null), 2000)
@@ -175,6 +177,7 @@ export default function VillasPage({ params }: { params: { id: string } }) {
           </Button>
           {(showAddRental || editingRental) && (
             <RentalForm
+              businessId={params.id}
               villas={villas}
               preselectedVillaId={addRentalVillaId}
               rental={editingRental}
@@ -190,13 +193,18 @@ export default function VillasPage({ params }: { params: { id: string } }) {
                 <div key={r.id} className="flex justify-between items-center p-3 border rounded-lg bg-gray-50">
                   <div>
                     <p className="font-semibold">{(r.villas as { name: string })?.name} – {r.tenant_name || 'Tenant'}</p>
-                    <p className="text-sm text-gray-600">{formatDate(r.start_date)} to {formatDate(r.end_date)}</p>
+                    <p className="text-sm text-gray-600">{formatDate(r.start_date)} to {formatDate(r.end_date)}{r.rent_amount != null && r.rent_amount > 0 ? ` · ${formatThb(r.rent_amount)}` : ''}</p>
                     {r.nfc_code && <span className="text-xs text-blue-600">/{r.nfc_code}</span>}
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => copyNfcLink(r.nfc_code!)} disabled={!r.nfc_code}>
                       <Copy className="h-4 w-4" /> {copiedCode === r.nfc_code ? 'Copied' : 'Link'}
                     </Button>
+                    <QrLinkButton
+                      path={r.nfc_code ? getNfcPath(r.nfc_code) : ''}
+                      title={`${(r.villas as { name: string })?.name || 'Villa'} rental`}
+                      disabled={!r.nfc_code}
+                    />
                     <Button size="sm" variant="outline" onClick={() => { setEditingRental(r); setShowAddRental(true); setAddRentalVillaId(null) }}>
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -258,25 +266,26 @@ function VillaForm({
 }
 
 function RentalForm({
+  businessId,
   villas,
   preselectedVillaId,
   rental,
   onSaved,
   onCancel,
 }: {
+  businessId: string
   villas: Villa[]
   preselectedVillaId?: string | null
   rental?: VillaRental | null
   onSaved: () => void
   onCancel: () => void
 }) {
-  const selectedVilla = villas.find((v) => v.id === (rental?.villa_id || preselectedVillaId))
-  const [villaSearch, setVillaSearch] = useState(selectedVilla ? selectedVilla.name : '')
-  const [villa_id, setVilla_id] = useState(rental?.villa_id || preselectedVillaId || '')
+  const preselectedVilla = villas.find((v) => v.id === (rental?.villa_id || preselectedVillaId))
+  const [villaName, setVillaName] = useState(preselectedVilla?.name || (rental?.villas as { name?: string })?.name || '')
   const [start_date, setStart_date] = useState(rental?.start_date || '')
   const [end_date, setEnd_date] = useState(rental?.end_date || '')
-  const [rent_amount, setRent_amount] = useState(rental?.rent_amount != null ? String(rental.rent_amount) : '')
-  const [deposit, setDeposit] = useState(rental?.deposit != null ? String(rental.deposit) : '')
+  const [rent_amount, setRent_amount] = useState(formatThbInput(rental?.rent_amount ?? null))
+  const [deposit, setDeposit] = useState(formatThbInput(rental?.deposit ?? null))
   const [tenant_name, setTenant_name] = useState(rental?.tenant_name || '')
   const [tenant_phone, setTenant_phone] = useState(rental?.tenant_phone || '')
   const [tenant_email, setTenant_email] = useState(rental?.tenant_email || '')
@@ -286,37 +295,47 @@ function RentalForm({
   const [agent_whatsapp, setAgent_whatsapp] = useState(rental?.agent_whatsapp || '')
   const [agent_telegram, setAgent_telegram] = useState(rental?.agent_telegram || '')
   const [agent_wechat, setAgent_wechat] = useState(rental?.agent_wechat || '')
-  const [next_payment_date, setNext_payment_date] = useState(rental?.next_payment_date || '')
   const [notes, setNotes] = useState(rental?.notes || '')
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
-    const villaUuid = rental?.villa_id || preselectedVillaId
-    const v = villaUuid ? villas.find((x) => x.id === villaUuid) : null
-    if (v) {
-      setVilla_id(v.id)
-      setVillaSearch(v.name)
-    }
+    const v = villas.find((x) => x.id === (rental?.villa_id || preselectedVillaId))
+    setVillaName(v?.name || (rental?.villas as { name?: string })?.name || '')
+    setRent_amount(formatThbInput(rental?.rent_amount ?? null))
+    setDeposit(formatThbInput(rental?.deposit ?? null))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rental?.villa_id, preselectedVillaId])
-
-  const handleVillaInputChange = (value: string) => {
-    setVillaSearch(value)
-    const match = villas.find((v) => v.name === value || v.name.toLowerCase() === value.trim().toLowerCase())
-    setVilla_id(match ? match.id : '')
-  }
+  }, [rental?.villa_id, rental?.rent_amount, rental?.deposit, preselectedVillaId, villas])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!villa_id) return
+    setSaveError(null)
+    const nameTrim = villaName.trim()
+    if (!nameTrim) {
+      setSaveError('Please enter villa name')
+      return
+    }
     setSaving(true)
+    let villa_id: string
+    const existing = villas.find((v) => v.name.toLowerCase() === nameTrim.toLowerCase())
+    if (existing) {
+      villa_id = existing.id
+    } else {
+      const { data: newVilla, error: villaErr } = await supabase.from('villas').insert({ business_id: businessId, name: nameTrim }).select('id').single()
+      if (villaErr || !newVilla) {
+        setSaving(false)
+        setSaveError(villaErr?.message || 'Could not create villa')
+        return
+      }
+      villa_id = newVilla.id
+    }
     const nfc_code = rental?.nfc_code || ('v_' + Math.random().toString(36).slice(2, 11))
     const payload = {
       villa_id,
       start_date,
       end_date,
-      rent_amount: rent_amount ? parseFloat(rent_amount) : null,
-      deposit: deposit ? parseFloat(deposit) : null,
+      rent_amount: parseThbInput(rent_amount),
+      deposit: parseThbInput(deposit),
       tenant_name: tenant_name || null,
       tenant_phone: tenant_phone || null,
       tenant_email: tenant_email || null,
@@ -324,15 +343,18 @@ function RentalForm({
       agent_phone: agent_phone || null,
       agent_line: agent_line || null,
       agent_whatsapp: agent_whatsapp || null,
-      next_payment_date: next_payment_date || null,
+      agent_telegram: agent_telegram || null,
+      agent_wechat: agent_wechat || null,
       notes: notes || null,
     }
-    if (rental) {
-      await supabase.from('villa_rentals').update(payload).eq('id', rental.id)
-    } else {
-      await supabase.from('villa_rentals').insert({ ...payload, nfc_code })
-    }
+    const { error } = rental
+      ? await supabase.from('villa_rentals').update(payload).eq('id', rental.id)
+      : await supabase.from('villa_rentals').insert({ ...payload, nfc_code })
     setSaving(false)
+    if (error) {
+      setSaveError(error.message + (error.code ? ` (${error.code})` : ''))
+      return
+    }
     onSaved()
   }
 
@@ -340,31 +362,25 @@ function RentalForm({
     <Card className="p-6 bg-amber-50 border-amber-200 mb-4">
       <h3 className="font-bold mb-4">{rental ? 'Edit Rental' : 'New Rental'}</h3>
       <form onSubmit={handleSubmit} className="space-y-4">
+        {saveError && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{saveError}</p>}
         <div>
           <Label>Villa *</Label>
           <Input
-            list="villa-list"
-            value={villaSearch}
-            onChange={(e) => handleVillaInputChange(e.target.value)}
+            value={villaName}
+            onChange={(e) => setVillaName(e.target.value)}
             placeholder="Enter villa name (e.g. Villa A1)"
             required
             className="w-full"
           />
-          <datalist id="villa-list">
-            {villas.map((v) => (
-              <option key={v.id} value={v.name} />
-            ))}
-          </datalist>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div><Label>Start date *</Label><Input type="date" value={start_date} onChange={(e) => setStart_date(e.target.value)} required /></div>
-          <div><Label>End date *</Label><Input type="date" value={end_date} onChange={(e) => setEnd_date(e.target.value)} required /></div>
+          <div><Label>Start date *</Label><Input type="date" value={start_date} onChange={(e) => { const v = e.target.value; setStart_date(v); if (end_date && v > end_date) setEnd_date(v); }} required /></div>
+          <div><Label>End date *</Label><Input type="date" value={end_date} onChange={(e) => setEnd_date(e.target.value)} min={start_date || undefined} required /></div>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div><Label>Rent amount</Label><Input type="number" value={rent_amount} onChange={(e) => setRent_amount(e.target.value)} /></div>
-          <div><Label>Deposit</Label><Input type="number" value={deposit} onChange={(e) => setDeposit(e.target.value)} /></div>
+          <div><Label>Rent amount (THB)</Label><Input type="text" inputMode="numeric" value={rent_amount} onChange={(e) => handleThbInputChange(e.target.value, setRent_amount)} placeholder="e.g. 75,000" /></div>
+          <div><Label>Deposit (THB)</Label><Input type="text" inputMode="numeric" value={deposit} onChange={(e) => handleThbInputChange(e.target.value, setDeposit)} placeholder="e.g. 10,000" /></div>
         </div>
-        <div><Label>Next payment date</Label><Input type="date" value={next_payment_date} onChange={(e) => setNext_payment_date(e.target.value)} /></div>
         <h4 className="font-semibold text-sm">Tenant (admin only)</h4>
         <div className="grid grid-cols-2 gap-4">
           <div><Label>Name</Label><Input value={tenant_name} onChange={(e) => setTenant_name(e.target.value)} /></div>
@@ -378,7 +394,7 @@ function RentalForm({
           <div><Label>LINE</Label><Input value={agent_line} onChange={(e) => setAgent_line(e.target.value)} placeholder="https://line.me/ti/p/..." /></div>
           <div><Label>WhatsApp</Label><Input value={agent_whatsapp} onChange={(e) => setAgent_whatsapp(e.target.value)} placeholder="66812345678" /></div>
           <div><Label>Telegram</Label><Input value={agent_telegram} onChange={(e) => setAgent_telegram(e.target.value)} placeholder="https://t.me/..." /></div>
-          <div><Label>WeChat ID</Label><Input value={agent_wechat} onChange={(e) => setAgent_wechat(e.target.value)} placeholder="wechat_username" /></div>
+          <div><Label>WeChat</Label><Input value={agent_wechat} onChange={(e) => setAgent_wechat(e.target.value)} placeholder="https://weixin.qq.com/..." /></div>
         </div>
         <div><Label>Notes (admin only)</Label><Input value={notes} onChange={(e) => setNotes(e.target.value)} /></div>
         <div className="flex gap-2">

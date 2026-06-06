@@ -9,7 +9,8 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import Link from 'next/link'
 import { ArrowLeft, Plus, Bike, Edit, Trash2, Copy } from 'lucide-react'
-import { formatDate } from '@/lib/utils'
+import { formatDate, formatThb, formatThbInput, parseThbInput, handleThbInputChange, getPublicUrl } from '@/lib/utils'
+import QrLinkButton from '@/components/QrLinkButton'
 
 interface Bike {
   id: string
@@ -102,9 +103,11 @@ export default function BikesPage({ params }: { params: { id: string } }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [params.id])
 
+  const getNfcPath = (code: string) => `/${business?.slug}/bikerentals/${code}`
+
   const copyNfcLink = (code: string) => {
-    if (typeof window === 'undefined') return
-    const url = `${window.location.origin}/b/${code}`
+    if (typeof window === 'undefined' || !business) return
+    const url = getPublicUrl(getNfcPath(code), window.location.origin)
     navigator.clipboard.writeText(url)
     setCopiedCode(code)
     setTimeout(() => setCopiedCode(null), 2000)
@@ -175,6 +178,8 @@ export default function BikesPage({ params }: { params: { id: string } }) {
           </Button>
           {(showAddRental || editingRental) && (
             <RentalForm
+              businessId={params.id}
+              businessSlug={business?.slug}
               bikes={bikes}
               preselectedBikeId={addRentalBikeId}
               rental={editingRental}
@@ -190,13 +195,18 @@ export default function BikesPage({ params }: { params: { id: string } }) {
                 <div key={r.id} className="flex justify-between items-center p-3 border rounded-lg bg-gray-50">
                   <div>
                     <p className="font-semibold">{(r.bikes as { bike_id: string; model?: string })?.bike_id} – {r.customer_name}</p>
-                    <p className="text-sm text-gray-600">{formatDate(r.start_date)} to {formatDate(r.end_date)}{r.rent_amount != null && r.rent_amount > 0 ? ` · ฿${Number(r.rent_amount).toLocaleString()}` : ''}</p>
+                    <p className="text-sm text-gray-600">{formatDate(r.start_date)} to {formatDate(r.end_date)}{r.rent_amount != null && r.rent_amount > 0 ? ` · ${formatThb(r.rent_amount)}` : ''}</p>
                     {r.nfc_code && <span className="text-xs text-blue-600">/{r.nfc_code}</span>}
                   </div>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => copyNfcLink(r.nfc_code!)} disabled={!r.nfc_code}>
                       <Copy className="h-4 w-4" /> {copiedCode === r.nfc_code ? 'Copied' : 'Link'}
                     </Button>
+                    <QrLinkButton
+                      path={r.nfc_code ? getNfcPath(r.nfc_code) : ''}
+                      title={`${r.customer_name} rental`}
+                      disabled={!r.nfc_code}
+                    />
                     <Button size="sm" variant="outline" onClick={() => { setEditingRental(r); setShowAddRental(true); setAddRentalBikeId(null) }}>
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -279,27 +289,32 @@ function BikeForm({
 }
 
 function RentalForm({
+  businessId,
+  businessSlug,
   bikes,
   preselectedBikeId,
   rental,
   onSaved,
   onCancel,
 }: {
+  businessId: string
+  businessSlug?: string | null
   bikes: Bike[]
   preselectedBikeId?: string | null
   rental?: BikeRental | null
   onSaved: () => void
   onCancel: () => void
 }) {
-  const selectedBike = bikes.find((b) => b.id === (rental?.bike_id || preselectedBikeId))
-  const [bikeSearch, setBikeSearch] = useState(selectedBike ? `${selectedBike.bike_id}${selectedBike.model ? ` - ${selectedBike.model}` : ''}` : '')
-  const [bike_id, setBike_id] = useState(rental?.bike_id || preselectedBikeId || '')
+  const getBikeLabel = (b: Bike) => `${b.bike_id}${b.model ? ` - ${b.model}` : ''}`
+  const preselectedBike = bikes.find((b) => b.id === (rental?.bike_id || preselectedBikeId))
+  const rentalBike = rental?.bikes as { bike_id?: string; model?: string } | null
+  const [bikeIdInput, setBikeIdInput] = useState(preselectedBike ? getBikeLabel(preselectedBike) : rentalBike?.bike_id ? `${rentalBike.bike_id}${rentalBike.model ? ` - ${rentalBike.model}` : ''}` : '')
   const [customer_name, setCustomer_name] = useState(rental?.customer_name || '')
   const [phone, setPhone] = useState(rental?.phone || '')
   const [start_date, setStart_date] = useState(rental?.start_date || '')
   const [end_date, setEnd_date] = useState(rental?.end_date || '')
-  const [rent_amount, setRent_amount] = useState(rental?.rent_amount != null ? String(rental.rent_amount) : '')
-  const [deposit, setDeposit] = useState(rental?.deposit != null ? String(rental.deposit) : '')
+  const [rent_amount, setRent_amount] = useState(formatThbInput(rental?.rent_amount ?? null))
+  const [deposit, setDeposit] = useState(formatThbInput(rental?.deposit ?? 0))
   const [km_start, setKm_start] = useState(rental?.km_start != null ? String(rental.km_start) : '')
   const [km_end, setKm_end] = useState(rental?.km_end != null ? String(rental.km_end) : '')
   const [agent_phone, setAgent_phone] = useState(rental?.agent_phone || '')
@@ -308,30 +323,40 @@ function RentalForm({
   const [agent_telegram, setAgent_telegram] = useState(rental?.agent_telegram || '')
   const [agent_wechat, setAgent_wechat] = useState(rental?.agent_wechat || '')
   const [saving, setSaving] = useState(false)
+  const [saveError, setSaveError] = useState<string | null>(null)
 
   useEffect(() => {
-    const bikeUuid = rental?.bike_id || preselectedBikeId
-    const b = bikeUuid ? bikes.find((x) => x.id === bikeUuid) : null
-    if (b) {
-      setBike_id(b.id)
-      setBikeSearch(`${b.bike_id}${b.model ? ` - ${b.model}` : ''}`)
-    }
+    const b = bikes.find((x) => x.id === (rental?.bike_id || preselectedBikeId))
+    const rb = rental?.bikes as { bike_id?: string; model?: string } | null
+    setBikeIdInput(b ? getBikeLabel(b) : rb?.bike_id ? `${rb.bike_id}${rb.model ? ` - ${rb.model}` : ''}` : '')
+    setRent_amount(formatThbInput(rental?.rent_amount ?? null))
+    setDeposit(formatThbInput(rental?.deposit ?? 0))
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rental?.bike_id, preselectedBikeId])
-
-  const handleBikeInputChange = (value: string) => {
-    setBikeSearch(value)
-    const match = availableBikes.find((b) => {
-      const label = `${b.bike_id}${b.model ? ` - ${b.model}` : ''}`
-      return label === value || b.bike_id === value.trim()
-    })
-    setBike_id(match ? match.id : '')
-  }
+  }, [rental?.bike_id, rental?.rent_amount, rental?.deposit, preselectedBikeId, bikes])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!bike_id) return
+    setSaveError(null)
+    const inputTrim = bikeIdInput.trim()
+    if (!inputTrim) {
+      setSaveError('Please enter bike ID')
+      return
+    }
     setSaving(true)
+    const bikeIdText = inputTrim.split(' - ')[0].trim()
+    let bike_id: string
+    const existing = bikes.find((b) => b.bike_id.toLowerCase() === bikeIdText.toLowerCase())
+    if (existing) {
+      bike_id = existing.id
+    } else {
+      const { data: newBike, error: bikeErr } = await supabase.from('bikes').insert({ business_id: businessId, bike_id: bikeIdText }).select('id').single()
+      if (bikeErr || !newBike) {
+        setSaving(false)
+        setSaveError(bikeErr?.message || 'Could not create bike')
+        return
+      }
+      bike_id = newBike.id
+    }
     const nfc_code = rental?.nfc_code || ('r_' + Math.random().toString(36).slice(2, 11))
     const payload = {
       bike_id,
@@ -339,8 +364,8 @@ function RentalForm({
       phone: phone || null,
       start_date,
       end_date,
-      rent_amount: rent_amount ? Number(rent_amount) : null,
-      deposit: Number(deposit) || 0,
+      rent_amount: parseThbInput(rent_amount),
+      deposit: parseThbInput(deposit) ?? 0,
       km_start: km_start ? Number(km_start) : null,
       km_end: km_end ? Number(km_end) : null,
       agent_phone: agent_phone || null,
@@ -349,48 +374,48 @@ function RentalForm({
       agent_telegram: agent_telegram || null,
       agent_wechat: agent_wechat || null,
     }
+    let err: { message: string } | null = null
     if (rental) {
-      await supabase.from('rentals').update(payload).eq('id', rental.id)
-      if (bike_id !== rental.bike_id) {
+      const res = await supabase.from('rentals').update(payload).eq('id', rental.id)
+      err = res.error
+      if (!err && bike_id !== rental.bike_id) {
         const oldBikeUpdate = km_end
           ? { odometer_km: Number(km_end), status: 'available' }
           : { status: 'available' }
         await supabase.from('bikes').update(oldBikeUpdate).eq('id', rental.bike_id)
         await supabase.from('bikes').update({ status: 'rented' }).eq('id', bike_id)
-      } else if (km_end && rental.bike_id) {
+      } else if (!err && km_end && rental.bike_id) {
         await supabase.from('bikes').update({ odometer_km: Number(km_end), status: 'available' }).eq('id', rental.bike_id)
       }
     } else {
-      const { data } = await supabase.from('rentals').insert({ ...payload, nfc_code }).select().single()
-      if (data) {
+      const { data, error } = await supabase.from('rentals').insert({ ...payload, nfc_code }).select().single()
+      err = error
+      if (!err && data) {
         await supabase.from('bikes').update({ status: 'rented' }).eq('id', bike_id)
       }
     }
     setSaving(false)
+    if (err) {
+      setSaveError(err.message)
+      return
+    }
     onSaved()
   }
-
-  const availableBikes = bikes.filter((b) => b.status === 'available' || b.id === rental?.bike_id)
 
   return (
     <Card className="p-6 bg-amber-50 border-amber-200 mb-4">
       <h3 className="font-bold mb-4">{rental ? 'Edit Rental' : 'New Rental'}</h3>
       <form onSubmit={handleSubmit} className="space-y-4">
+        {saveError && <p className="text-sm text-red-600 bg-red-50 p-2 rounded">{saveError}</p>}
         <div>
           <Label>Bike *</Label>
           <Input
-            list="bike-list"
-            value={bikeSearch}
-            onChange={(e) => handleBikeInputChange(e.target.value)}
+            value={bikeIdInput}
+            onChange={(e) => setBikeIdInput(e.target.value)}
             placeholder="Enter bike ID (e.g. B001)"
             required
             className="w-full"
           />
-          <datalist id="bike-list">
-            {availableBikes.map((b) => (
-              <option key={b.id} value={`${b.bike_id}${b.model ? ` - ${b.model}` : ''}`} />
-            ))}
-          </datalist>
         </div>
         <div>
           <Label>Customer name *</Label>
@@ -398,12 +423,12 @@ function RentalForm({
         </div>
         <div><Label>Phone</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} /></div>
         <div className="grid grid-cols-2 gap-4">
-          <div><Label>Start date *</Label><Input type="date" value={start_date} onChange={(e) => setStart_date(e.target.value)} required /></div>
-          <div><Label>End date *</Label><Input type="date" value={end_date} onChange={(e) => setEnd_date(e.target.value)} required /></div>
+          <div><Label>Start date *</Label><Input type="date" value={start_date} onChange={(e) => { const v = e.target.value; setStart_date(v); if (end_date && v > end_date) setEnd_date(v); }} required /></div>
+          <div><Label>End date *</Label><Input type="date" value={end_date} onChange={(e) => setEnd_date(e.target.value)} min={start_date || undefined} required /></div>
         </div>
         <div className="grid grid-cols-2 gap-4">
-          <div><Label>Price (฿)</Label><Input type="number" value={rent_amount} onChange={(e) => setRent_amount(e.target.value)} placeholder="Enter rental price" /></div>
-          <div><Label>Deposit (฿)</Label><Input type="number" value={deposit} onChange={(e) => setDeposit(e.target.value)} /></div>
+          <div><Label>Price (THB)</Label><Input type="text" inputMode="numeric" value={rent_amount} onChange={(e) => handleThbInputChange(e.target.value, setRent_amount)} placeholder="e.g. 75,000" /></div>
+          <div><Label>Deposit (THB)</Label><Input type="text" inputMode="numeric" value={deposit} onChange={(e) => handleThbInputChange(e.target.value, setDeposit)} placeholder="e.g. 10,000" /></div>
         </div>
         <div className="grid grid-cols-2 gap-4">
           <div><Label>KM start</Label><Input type="number" value={km_start} onChange={(e) => setKm_start(e.target.value)} /></div>
@@ -415,9 +440,9 @@ function RentalForm({
           <div><Label>LINE</Label><Input value={agent_line} onChange={(e) => setAgent_line(e.target.value)} placeholder="https://line.me/ti/p/..." /></div>
           <div><Label>WhatsApp</Label><Input value={agent_whatsapp} onChange={(e) => setAgent_whatsapp(e.target.value)} placeholder="66812345678" /></div>
           <div><Label>Telegram</Label><Input value={agent_telegram} onChange={(e) => setAgent_telegram(e.target.value)} placeholder="https://t.me/..." /></div>
-          <div><Label>WeChat ID</Label><Input value={agent_wechat} onChange={(e) => setAgent_wechat(e.target.value)} placeholder="wechat_username" /></div>
+          <div><Label>WeChat</Label><Input value={agent_wechat} onChange={(e) => setAgent_wechat(e.target.value)} placeholder="https://weixin.qq.com/..." /></div>
         </div>
-        {rental?.nfc_code && <p className="text-xs text-gray-500">Link: /b/{rental.nfc_code}</p>}
+        {rental?.nfc_code && businessSlug && <p className="text-xs text-gray-500">Link: /{businessSlug}/bikerentals/{rental.nfc_code}</p>}
         <div className="flex gap-2">
           <Button type="submit" disabled={saving}>{saving ? 'Saving...' : 'Save'}</Button>
           <Button type="button" variant="outline" onClick={onCancel}>Cancel</Button>

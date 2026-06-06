@@ -80,7 +80,7 @@ export default function BikesBlock({
           />
         </div>
         <div className="space-y-2">
-          <Label>WeChat ID</Label>
+          <Label>WeChat</Label>
           <Input
             value={d.wechat || ''}
             onChange={(e) => onChange({ ...d, wechat: e.target.value })}

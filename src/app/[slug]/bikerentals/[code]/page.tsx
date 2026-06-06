@@ -7,7 +7,15 @@ import { Bike, Calendar, User, Phone, MessageCircle, Send } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
-export default async function RentalViewPage({ params }: { params: { code: string } }) {
+export default async function BikeRentalGuestPage({ params }: { params: { slug: string; code: string } }) {
+  const { data: business } = await supabase
+    .from('businesses')
+    .select('id, slug, name')
+    .eq('slug', params.slug)
+    .single()
+
+  if (!business) notFound()
+
   const { data: rental, error } = await supabase
     .from('rentals')
     .select(`
@@ -23,20 +31,10 @@ export default async function RentalViewPage({ params }: { params: { code: strin
     .eq('nfc_code', params.code)
     .single()
 
-  if (error || !rental) {
-    notFound()
-  }
+  if (error || !rental) notFound()
 
   const bike = rental.bikes as { bike_id: string; model?: string; plate_number?: string; business_id: string } | null
-  if (!bike) {
-    notFound()
-  }
-
-  const { data: business } = await supabase
-    .from('businesses')
-    .select('name')
-    .eq('id', bike.business_id)
-    .single()
+  if (!bike || bike.business_id !== business.id) notFound()
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 p-4">

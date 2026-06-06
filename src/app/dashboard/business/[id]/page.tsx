@@ -9,6 +9,8 @@ import type { Business, Page } from '@/types/database.types'
 import Link from 'next/link'
 import { ArrowLeft, Plus, ExternalLink, Edit, Copy, Home, Bike } from 'lucide-react'
 import Image from 'next/image'
+import QrLinkButton from '@/components/QrLinkButton'
+import { getPublicUrl } from '@/lib/utils'
 
 export default function BusinessPagesPage({ params }: { params: { id: string } }) {
   const [business, setBusiness] = useState<Business | null>(null)
@@ -17,11 +19,12 @@ export default function BusinessPagesPage({ params }: { params: { id: string } }
   const [copiedId, setCopiedId] = useState<string | null>(null)
   const router = useRouter()
 
+  const getPagePath = (page: Page) =>
+    page.sub_slug ? `/${business?.slug}/${page.sub_slug}` : `/${business?.slug}`
+
   const copyPageLink = (page: Page) => {
-    if (typeof window === 'undefined') return
-    const url = page.sub_slug 
-      ? `${window.location.origin}/${business?.slug}/${page.sub_slug}`
-      : `${window.location.origin}/${business?.slug}`
+    if (typeof window === 'undefined' || !business) return
+    const url = getPublicUrl(getPagePath(page), window.location.origin)
     navigator.clipboard.writeText(url)
     setCopiedId(page.id)
     setTimeout(() => setCopiedId(null), 2000)
@@ -175,6 +178,7 @@ export default function BusinessPagesPage({ params }: { params: { id: string } }
                   >
                     <Copy className="h-4 w-4" />
                   </Button>
+                  <QrLinkButton path={getPagePath(page)} title={page.title} />
                   <Link href={`/${business.slug}${page.sub_slug ? `/${page.sub_slug}` : ''}`} target="_blank">
                     <Button variant="ghost" size="sm">
                       <ExternalLink className="h-4 w-4" />
